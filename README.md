@@ -60,208 +60,32 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
-# Task Manager API
+# Task Manager App
 
-This is a simple API to manage tasks with CRUD operations.
+A simple task manager application built with **Laravel 12**. Users can:
+- Create tasks with priority and due dates
+- View, filter, and manage tasks
+- Mark tasks as complete or pending
+- Delete tasks
+- Filter by status: All, Completed, Pending, High Priority
 
-## Base URL
-https://api.taskmanager.com/v1
+## Features
+- User Authentication (Login/Register)
+- CRUD for tasks
+- Priority & status filters
+- Task statistics on dashboard (Total, Completed, Pending, High Priority)
+- Clean and responsive UI
 
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
+## Tech Stack
+- Laravel 12
+- PHP 8.2
+- MySQL
+- TailwindCSS (optional, if used)
+- Blade Templates
 
+## Setup Instructions
 
-## Common Response Format
-```json
-{
-  "success": true,
-  "message": "Operation successful",
-  "data": {},
-  "timestamp": "2025-07-13T10:30:00Z"
-}
-
-## Error Response Format
-```json
-{
-  "success": false,
-  "message": "Error description",
-  "error_code": "ERROR_CODE",
-  "timestamp": "2025-07-13T10:30:00Z"
-}
-
-## POST /auth/register
-Request:
-```json
-{
-  "name": "Sayuni Kavinhara",
-  "email": "sayuni@example.com",
-  "password": "SecurePass123!",
-  "password_confirmation": "SecurePass123!"
-}
-
-Response:
-```json
-{
-  "success": true,
-  "message": "User registered successfully",
-  "data": {
-    "user": {
-      "id": 1,
-      "name": "Sayuni Kavinhara",
-      "email": "sayuni@example.com",
-      "created_at": "2025-07-13T10:30:00Z"
-    },
-    "token": "jwt_token_here"
-  }
-}
-
-## POST /auth/login
-Request:
-```json
-{
-  "email": "sayuni@example.com",
-  "password": "SecurePass123!"
-}
-
-Response:
-``json
-{
-  "success": true,
-  "message": "Login successful",
-  "data": {
-    "user": {
-      "id": 1,
-      "name": "Sayuni Kavinhara",
-      "email": "sayuni@example.com"
-    },
-    "token": "jwt_token_here",
-    "expires_at": "2025-07-14T10:30:00Z"
-  }
-}
-
-## POST /auth/logout
-Headers: Authorization: Bearer <token>
-
-Response:
-```json
-{
-  "success": true,
-  "message": "Logged out successfully"
-}
-
-##POST /auth/refresh
-Headers: Authorization: Bearer <token>
-
-Response:
-```json:
-{
-  "success": true,
-  "message": "Token refreshed",
-  "data": {
-    "token": "new_jwt_token_here",
-    "expires_at": "2025-07-14T10:30:00Z"
-  }
-}
-
-# Task Manager Endpoints
-
-## GET/tasks
-Headers: Authorization: Bearer <token>
-
-Query Parameters:
-
-status (optional): pending, completed
-priority (optional): low, medium, high
-page (optional): Page number (default: 1)
-limit (optional): Items per page (default: 10)
-search (optional): Search in title and description
-
-Response:
-```json
-{
-  "success": true,
-  "message": "Tasks retrieved successfully",
-  "data": {
-    "tasks": [
-      {
-        "id": 1,
-        "title": "Complete project documentation",
-        "description": "Write comprehensive API documentation",
-        "status": "pending",
-        "priority": "high",
-        "due_date": "2025-07-16",
-        "created_at": "2025-07-13T10:30:00Z",
-        "updated_at": "2025-07-13T10:30:00Z"
-      }
-    ],
-    "pagination": {
-      "current_page": 1,
-      "per_page": 10,
-      "total": 1,
-      "total_pages": 1
-    },
-    "statistics": {
-      "total_tasks": 1,
-      "completed_tasks": 0,
-      "pending_tasks": 1,
-      "high_priority_tasks": 1
-    }
-  }
-}
-
-## GET /tasks/{id}
-Headers: Authorization: Bearer <token>
-Response:
-```json
-{
-  "success": true,
-  "message": "Task retrieved successfully",
-  "data": {
-    "task": {
-      "id": 1,
-      "title": "Complete project documentation",
-      "description": "Write comprehensive API documentation",
-      "status": "pending",
-      "priority": "high",
-      "due_date": "2025-07-16",
-      "created_at": "2025-07-13T10:30:00Z",
-      "updated_at": "2025-07-13T10:30:00Z"
-    }
-  }
-}
-
-## POST /tasks
-Headers: Authorization: Bearer <token>
-Request:
-```json
-{
-  "title": "Complete project documentation",
-  "description": "Write comprehensive API documentation",
-  "priority": "high",
-  "due_date": "2025-07-16"
-}
-
-Response:
-```json
-{
-  "success": true,
-  "message": "Task created successfully",
-  "data": {
-    "task": {
-      "id": 1,
-      "title": "Complete project documentation",
-      "description": "Write comprehensive API documentation",
-      "status": "pending",
-      "priority": "high",
-      "due_date": "2025-07-16",
-      "created_at": "2025-07-13T10:30:00Z",
-      "updated_at": "2025-07-13T10:30:00Z"
-    }
-  }
-}
-
-
-## DELETE /tasks/{id}
-Headers: Authorization: Bearer <token>
-
-Response:
+1. **Clone the repo**
+```bash
+git clone <your-github-repo-url>
+cd task-manager

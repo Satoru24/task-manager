@@ -30,25 +30,17 @@ return [
     */
 
     'connections' => [
-    // ... other connections
 
-    'sqlite' => [
-        'driver' => 'sqlite',
-        'url' => env('DATABASE_URL'),
-        'database' => env('DB_DATABASE', database_path('database.sqlite')),
-        'prefix' => '',
-        'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
-        'options' => [
-            PDO::ATTR_TIMEOUT => 60,
-        ],
-        
-        'sqlite_testing' => [
+        'sqlite' => [
             'driver' => 'sqlite',
-            'database' => ':memory:',
+            'url' => env('DB_URL'),
+            'database' => env('DB_DATABASE', database_path('database.sqlite')),
             'prefix' => '',
-            'foreign_key_constraints' => true,
-],
-
+            'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
+            'busy_timeout' => null,
+            'journal_mode' => null,
+            'synchronous' => null,
+        ],
 
         'mysql' => [
             'driver' => 'mysql',
@@ -179,5 +171,4 @@ return [
 
     ],
 
-]
 ];

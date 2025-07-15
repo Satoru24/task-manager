@@ -4,210 +4,68 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class TaskController extends Controller
 {
-    /**
-     * Display a listing of the user's tasks.
-     */
-    public function index(Request $request): JsonResponse
+
+   public function index()
     {
-        $query = Auth::user()->tasks();
+        $user = Auth::user();
+        if (!$user) {
+            abort(403, 'User not authenticated');
+        }
+        $query = $user->tasks();
 
-        // Filter by status
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+        // Apply filters
+        if (request('filter') == 'completed') {
+            $query->where('completed', true);
+        } elseif (request('filter') == 'pending') {
+            $query->where('completed', false);
+        } elseif (request('filter') == 'high') {
+            $query->where('priority', 'high');
         }
 
-        // Filter by priority
-        if ($request->has('priority')) {
-            $query->where('priority', $request->priority);
-        }
+        $tasks = $query->latest()->get();
 
-        // Search by title or description
-        if ($request->has('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('title', 'like', '%' . $request->search . '%')
-                  ->orWhere('description', 'like', '%' . $request->search . '%');
-            });
-        }
+        // Calculate stats
+        $totalTasks = $user->tasks()->count();
+        $completedTasks = $user->tasks()->where('completed', true)->count();
+        $pendingTasks = $user->tasks()->where('completed', false)->count();
+        $highPriorityTasks = $user->tasks()->where('priority', 'high')->count();
 
-        // Filter by due date
-        if ($request->has('due_before')) {
-            $query->where('due_date', '<', $request->due_before);
-        }
-
-        // Show only overdue tasks
-        if ($request->has('overdue') && $request->overdue) {
-            $query->where('due_date', '<', now())->where('status', '!=', 'completed');
-        }
-
-        // Sort by due date, priority, or creation date
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-
-        $validSortFields = ['created_at', 'updated_at', 'due_date', 'priority', 'title'];
-        if (in_array($sortBy, $validSortFields)) {
-            $query->orderBy($sortBy, $sortOrder);
-        }
-
-        $tasks = $query->paginate($request->get('per_page', 15));
-
-        return response()->json([
-            'success' => true,
-            'data' => $tasks->items(),
-            'pagination' => [
-                'current_page' => $tasks->currentPage(),
-                'last_page' => $tasks->lastPage(),
-                'per_page' => $tasks->perPage(),
-                'total' => $tasks->total(),
-            ]
-        ]);
+        return view('dashboard', compact('tasks', 'totalTasks', 'completedTasks', 'pendingTasks', 'highPriorityTasks'));
     }
 
-    /**
-     * Store a newly created task.
-     */
-    public function store(Request $request): JsonResponse
+    public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'status' => ['nullable', Rule::in(['pending', 'in_progress', 'completed'])],
-            'priority' => ['nullable', Rule::in(['low', 'medium', 'high'])],
-            'due_date' => 'nullable|date|after:now',
-        ]);
-
-        $task = Auth::user()->tasks()->create($request->only([
-            'title', 'description', 'status', 'priority', 'due_date'
-        ]));
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Task created successfully',
-            'data' => $task
-        ], 201);
-    }
-
-    /**
-     * Display the specified task.
-     */
-    public function show(Task $task): JsonResponse
-    {
-        // Check if the task belongs to the authenticated user
-        if ($task->user_id !== Auth::id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Task not found'
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $task
-        ]);
-    }
-
-    /**
-     * Update the specified task.
-     */
-    public function update(Request $request, Task $task): JsonResponse
-    {
-        // Check if the task belongs to the authenticated user
-        if ($task->user_id !== Auth::id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Task not found'
-            ], 404);
-        }
-
-        $request->validate([
-            'title' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'status' => ['sometimes', Rule::in(['pending', 'in_progress', 'completed'])],
-            'priority' => ['sometimes', Rule::in(['low', 'medium', 'high'])],
+            'description' => 'nullable|string',
+            'priority' => 'required|in:low,medium,high',
             'due_date' => 'nullable|date',
         ]);
 
-        $task->update($request->only([
-            'title', 'description', 'status', 'priority', 'due_date'
-        ]));
+        auth()->user()->tasks()->create($validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Task updated successfully',
-            'data' => $task->fresh()
-        ]);
+        return redirect()->route('dashboard')->with('success', 'Task created successfully!');
     }
 
-    /**
-     * Remove the specified task.
-     */
-    public function destroy(Task $task): JsonResponse
+    public function toggle(Task $task)
     {
-        // Check if the task belongs to the authenticated user
-        if ($task->user_id !== Auth::id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Task not found'
-            ], 404);
-        }
+        $this->authorize('update', $task);
+
+        $task->update(['completed' => !$task->completed]);
+
+        return redirect()->route('dashboard')->with('success', 'Task updated successfully!');
+    }
+
+    public function destroy(Task $task)
+    {
+        $this->authorize('delete', $task);
 
         $task->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Task deleted successfully'
-        ]);
-    }
-
-    /**
-     * Mark a task as completed.
-     */
-    public function markAsCompleted(Task $task): JsonResponse
-    {
-        // Check if the task belongs to the authenticated user
-        if ($task->user_id !== Auth::id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Task not found'
-            ], 404);
-        }
-
-        $task->update([
-            'status' => 'completed',
-            'completed_at' => now(),
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Task marked as completed',
-            'data' => $task->fresh()
-        ]);
-    }
-
-    /**
-     * Get task statistics for the authenticated user.
-     */
-    public function stats(): JsonResponse
-    {
-        $user = Auth::user();
-
-        $stats = [
-            'total_tasks' => $user->tasks()->count(),
-            'pending_tasks' => $user->tasks()->where('status', 'pending')->count(),
-            'in_progress_tasks' => $user->tasks()->where('status', 'in_progress')->count(),
-            'completed_tasks' => $user->tasks()->where('status', 'completed')->count(),
-            'overdue_tasks' => $user->tasks()->where('due_date', '<', now())->where('status', '!=', 'completed')->count(),
-            'high_priority_tasks' => $user->tasks()->where('priority', 'high')->count(),
-        ];
-
-        return response()->json([
-            'success' => true,
-            'data' => $stats
-        ]);
+        return redirect()->route('dashboard')->with('success', 'Task deleted successfully!');
     }
 }

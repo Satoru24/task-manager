@@ -2,20 +2,22 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Task;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
+    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'name',
@@ -26,7 +28,7 @@ class User extends Authenticatable
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $hidden = [
         'password',
@@ -46,43 +48,9 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Get the tasks for the user.
-     */
-    public function tasks(): HasMany
+
+    public function tasks() 
     {
         return $this->hasMany(Task::class);
-    }
-
-    /**
-     * Get pending tasks for the user.
-     */
-    public function pendingTasks(): HasMany
-    {
-        return $this->hasMany(Task::class)->where('status', Task::STATUS_PENDING);
-    }
-
-    /**
-     * Get completed tasks for the user.
-     */
-    public function completedTasks(): HasMany
-    {
-        return $this->hasMany(Task::class)->where('status', Task::STATUS_COMPLETED);
-    }
-
-    /**
-     * Get overdue tasks for the user.
-     */
-    public function overdueTasks(): HasMany
-    {
-        return $this->hasMany(Task::class)->overdue();
-    }
-
-    /**
-     * Get tasks due soon for the user.
-     */
-    public function tasksDueSoon(): HasMany
-    {
-        return $this->hasMany(Task::class)->dueSoon();
     }
 }
